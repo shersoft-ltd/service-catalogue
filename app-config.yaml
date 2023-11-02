@@ -1,9 +1,9 @@
 app:
-  title: Scaffolded Backstage App
+  title: Shersoft Service Catalogue
   baseUrl: http://localhost:3000
 
 organization:
-  name: My Company
+  name: Shersoft Ltd
 
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins
@@ -28,20 +28,23 @@ backend:
   # This is for local development only, it is not recommended to use this in production
   # The production database configuration is stored in app-config.production.yaml
   database:
-    client: better-sqlite3
-    connection: ':memory:'
+    client: pg
+    connection:
+      host: localhost
+      user: service_catalogue
+      password: service_catalogue
+      port: 5432
+    plugin:
+      auth:
+        connection:
+          database: service_catalogue
   # workingDirectory: /tmp # Use this to configure a working directory for the scaffolder, defaults to the OS temp-dir
 
 integrations:
   github:
     - host: github.com
-      # This is a Personal Access Token or PAT from GitHub. You can find out how to generate this token, and more information
-      # about setting up the GitHub integration here: https://backstage.io/docs/getting-started/configuration#setting-up-a-github-integration
-      token: ${GITHUB_TOKEN}
-    ### Example for how to add your GitHub Enterprise instance using the API:
-    # - host: ghe.example.net
-    #   apiBaseUrl: https://ghe.example.net/api/v3
-    #   token: ${GHE_TOKEN}
+      apps:
+        - $include: github-app-shersoft-service-catalogue-credentials.yaml
 
 proxy:
   ### Example for how to add a proxy endpoint for the frontend.
@@ -64,7 +67,11 @@ techdocs:
 
 auth:
   # see https://backstage.io/docs/auth/ to learn about auth providers
-  providers: {}
+  providers:
+    github:
+      development:
+        clientId: ${AUTH_GITHUB_CLIENT_ID}
+        clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
 
 scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options
@@ -75,6 +82,15 @@ catalog:
     pullRequestBranchName: backstage-integration
   rules:
     - allow: [Component, System, API, Resource, Location]
+  providers:
+    github:
+      # the provider ID can be any camelCase string
+      shersoftLtdGitHub:
+        organization: 'shersoft-ltd' # string
+        catalogPath: '/catalog-info.yaml' # string
+        filters:
+          branch: 'main' # string
+          repository: '.*' # Regex
   locations:
     # Local example data, file locations are relative to the backend process, typically `packages/backend`
     - type: file
@@ -101,3 +117,6 @@ catalog:
     #   target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/acme-corp.yaml
     #   rules:
     #     - allow: [User, Group]
+
+    - type: github-discovery
+      target: https://github.com/shersoft-ltd

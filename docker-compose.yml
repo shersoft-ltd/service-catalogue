@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: service_catalogue
+      POSTGRES_USER: service_catalogue
+      POSTGRES_PASSWORD: service_catalogue
+    ports:
+      - 5432:5432
