@@ -44,7 +44,12 @@ integrations:
   github:
     - host: github.com
       apps:
-        - $include: github-app-shersoft-service-catalogue-credentials.yaml
+        - appId: ${AUTH_GITHUB_APP_ID}
+          webhookUrl: ${AUTH_GITHUB_WEBHOOK_URL}
+          clientId: ${AUTH_GITHUB_CLIENT_ID}
+          clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
+          webhookSecret: ${AUTH_GITHUB_WEBHOOK_SECRET}
+          privateKey: ${AUTH_GITHUB_PRIVATE_KEY}
 
 proxy:
   ### Example for how to add a proxy endpoint for the frontend.
@@ -72,6 +77,8 @@ auth:
       development:
         clientId: ${AUTH_GITHUB_CLIENT_ID}
         clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
+  session:
+    secret: test123
 
 scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options

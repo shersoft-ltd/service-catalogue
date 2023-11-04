@@ -30,7 +30,12 @@ import techdocs from './plugins/techdocs';
 import search from './plugins/search';
 import { PluginEnvironment } from './types';
 import { ServerPermissionClient } from '@backstage/plugin-permission-node';
-import { DefaultIdentityClient } from '@backstage/plugin-auth-node';
+import {
+  DefaultIdentityClient,
+  IdentityApi,
+} from '@backstage/plugin-auth-node';
+import { Request, Response, NextFunction } from 'express';
+import { Logger } from 'winston';
 
 function makeCreateEnv(config: Config) {
   const root = getRootLogger();
@@ -71,6 +76,35 @@ function makeCreateEnv(config: Config) {
   };
 }
 
+function buildAuthMiddleware(identity: IdentityApi, logger: Logger) {
+  return function authMiddleware(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    if (req.originalUrl.startsWith('/api/auth')) {
+      return next();
+    }
+
+    identity
+      .getIdentity({ request: req })
+      .then(result => {
+        if (result?.identity) {
+          next();
+        } else {
+          res.status(401);
+          res.json({ error: 'Unauthorized.' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        next();
+      });
+
+    logger.info(req.url + ' ' + req.user + ' ' + req.header('authorization'));
+  };
+}
+
 async function main() {
   const config = await loadBackendConfig({
     argv: process.argv,
@@ -86,7 +120,10 @@ async function main() {
   const searchEnv = useHotMemoize(module, () => createEnv('search'));
   const appEnv = useHotMemoize(module, () => createEnv('app'));
 
+  const identity = createEnv('auth').identity;
+
   const apiRouter = Router();
+  apiRouter.use(buildAuthMiddleware(identity, appEnv.logger));
   apiRouter.use('/catalog', await catalog(catalogEnv));
   apiRouter.use('/scaffolder', await scaffolder(scaffolderEnv));
   apiRouter.use('/auth', await auth(authEnv));
