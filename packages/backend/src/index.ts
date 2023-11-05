@@ -86,22 +86,38 @@ function buildAuthMiddleware(identity: IdentityApi, logger: Logger) {
       return next();
     }
 
+    if (req.ip === '127.0.0.1' || req.ip === '::1') {
+      if (logger.isLevelEnabled('debug')) {
+        logger.debug('loopback request - allowing');
+      }
+
+      return next();
+    }
+
     identity
       .getIdentity({ request: req })
       .then(result => {
         if (result?.identity) {
+          if (logger.isLevelEnabled('info')) {
+            logger.info('user is authenticated', {
+              identity: result.identity,
+            });
+          }
+
           next();
         } else {
+          if (logger.isLevelEnabled('info')) {
+            logger.info('user is not authenticated');
+          }
+
           res.status(401);
           res.json({ error: 'Unauthorized.' });
         }
       })
       .catch(err => {
-        console.error(err);
+        logger.warn('failed to authenticate user', { err });
         next();
       });
-
-    logger.info(req.url + ' ' + req.user + ' ' + req.header('authorization'));
   };
 }
 
