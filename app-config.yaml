@@ -103,6 +103,10 @@ catalog:
     - type: file
       target: ../../examples/entities.yaml
 
+    # Local example data, file locations are relative to the backend process, typically `packages/backend`
+    - type: file
+      target: ../../examples/nodejs-runtimes.yaml
+
     # Local example template
     - type: file
       target: ../../examples/template/template.yaml
@@ -124,6 +128,3 @@ catalog:
     #   target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/acme-corp.yaml
     #   rules:
     #     - allow: [User, Group]
-
-    - type: github-discovery
-      target: https://github.com/shersoft-ltd

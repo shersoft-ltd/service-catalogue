@@ -10,10 +10,12 @@ export class TechMaturityCatalogProcessor implements CatalogProcessor {
   getProcessorName() {
     return 'TechMaturityCatalogProcessor';
   }
-  async postProcessEntity(
+
+  async preProcessEntity(
     entity: Entity,
     _location: LocationSpec,
     _emit: CatalogProcessorEmit,
+    _location2: LocationSpec,
     _cache: CatalogProcessorCache,
   ): Promise<Entity> {
     //console.log('post processing', entity);
@@ -22,7 +24,15 @@ export class TechMaturityCatalogProcessor implements CatalogProcessor {
         entity.metadata.labels = {};
       }
 
+      const version = '14';
+
       entity.metadata.labels['shersoft.cloud/lowest-nodejs-version'] = '14';
+
+      if (!entity.spec.dependsOn) {
+        entity.spec.dependsOn = [];
+      }
+
+      entity.spec.dependsOn.push('resource:default/node' + version);
     }
     return entity;
   }
