@@ -219,6 +219,56 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@aws-sdk/client-cloudformation@npm:^3.441.0":
+  version: 3.441.0
+  resolution: "@aws-sdk/client-cloudformation@npm:3.441.0"
+  dependencies:
+    "@aws-crypto/sha256-browser": 3.0.0
+    "@aws-crypto/sha256-js": 3.0.0
+    "@aws-sdk/client-sts": 3.441.0
+    "@aws-sdk/core": 3.441.0
+    "@aws-sdk/credential-provider-node": 3.441.0
+    "@aws-sdk/middleware-host-header": 3.433.0
+    "@aws-sdk/middleware-logger": 3.433.0
+    "@aws-sdk/middleware-recursion-detection": 3.433.0
+    "@aws-sdk/middleware-signing": 3.433.0
+    "@aws-sdk/middleware-user-agent": 3.438.0
+    "@aws-sdk/region-config-resolver": 3.433.0
+    "@aws-sdk/types": 3.433.0
+    "@aws-sdk/util-endpoints": 3.438.0
+    "@aws-sdk/util-user-agent-browser": 3.433.0
+    "@aws-sdk/util-user-agent-node": 3.437.0
+    "@smithy/config-resolver": ^2.0.16
+    "@smithy/fetch-http-handler": ^2.2.4
+    "@smithy/hash-node": ^2.0.12
+    "@smithy/invalid-dependency": ^2.0.12
+    "@smithy/middleware-content-length": ^2.0.14
+    "@smithy/middleware-endpoint": ^2.1.3
+    "@smithy/middleware-retry": ^2.0.18
+    "@smithy/middleware-serde": ^2.0.12
+    "@smithy/middleware-stack": ^2.0.6
+    "@smithy/node-config-provider": ^2.1.3
+    "@smithy/node-http-handler": ^2.1.8
+    "@smithy/protocol-http": ^3.0.8
+    "@smithy/smithy-client": ^2.1.12
+    "@smithy/types": ^2.4.0
+    "@smithy/url-parser": ^2.0.12
+    "@smithy/util-base64": ^2.0.0
+    "@smithy/util-body-length-browser": ^2.0.0
+    "@smithy/util-body-length-node": ^2.1.0
+    "@smithy/util-defaults-mode-browser": ^2.0.16
+    "@smithy/util-defaults-mode-node": ^2.0.21
+    "@smithy/util-endpoints": ^1.0.2
+    "@smithy/util-retry": ^2.0.5
+    "@smithy/util-utf8": ^2.0.0
+    "@smithy/util-waiter": ^2.0.12
+    fast-xml-parser: 4.2.5
+    tslib: ^2.5.0
+    uuid: ^8.3.2
+  checksum: 04b988c9fbf797bdddb6f805cd40d5ef5fa061d82db0817baece2d206b47b90841ff2cbd418d51a69f7a24e1f4071d29071aa7872c009a8cdac8b90d79629187
+  languageName: node
+  linkType: hard
+
 "@aws-sdk/client-cognito-identity@npm:3.441.0":
   version: 3.441.0
   resolution: "@aws-sdk/client-cognito-identity@npm:3.441.0"
@@ -551,7 +601,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/credential-providers@npm:^3.350.0":
+"@aws-sdk/credential-providers@npm:^3.350.0, @aws-sdk/credential-providers@npm:^3.441.0":
   version: 3.441.0
   resolution: "@aws-sdk/credential-providers@npm:3.441.0"
   dependencies:
@@ -11557,6 +11607,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "backend@workspace:packages/backend"
   dependencies:
+    "@aws-sdk/client-cloudformation": ^3.441.0
+    "@aws-sdk/credential-providers": ^3.441.0
     "@backstage/backend-common": ^0.19.8
     "@backstage/backend-tasks": ^0.5.11
     "@backstage/catalog-client": ^1.4.5
@@ -11587,6 +11639,7 @@ __metadata:
     express-promise-router: ^4.1.0
     pg: ^8.11.3
     winston: ^3.2.1
+    yaml: ^2.3.4
   languageName: unknown
   linkType: soft
 
@@ -29734,6 +29787,13 @@ __metadata:
   version: 2.3.3
   resolution: "yaml@npm:2.3.3"
   checksum: cdfd132e7e0259f948929efe8835923df05c013c273c02bb7a2de9b46ac3af53c2778a35b32c7c0f877cc355dc9340ed564018c0242bfbb1278c2a3e53a0e99e
+  languageName: node
+  linkType: hard
+
+"yaml@npm:^2.3.4":
+  version: 2.3.4
+  resolution: "yaml@npm:2.3.4"
+  checksum: e6d1dae1c6383bcc8ba11796eef3b8c02d5082911c6723efeeb5ba50fc8e881df18d645e64de68e421b577296000bea9c75d6d9097c2f6699da3ae0406c030d8
   languageName: node
   linkType: hard
 
