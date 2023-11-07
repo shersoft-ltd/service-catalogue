@@ -115,6 +115,9 @@ catalog:
       rules:
         - allow: [User, Group]
 
+    - type: cdk-cloudformation-stack
+      target: arn:aws:iam::169549429764:role/test-backstage@friend-crm-auth-prod@eu-west-1
+
     ## Uncomment these lines to add more example data
     # - type: url
     #   target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/all.yaml

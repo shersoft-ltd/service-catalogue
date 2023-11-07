@@ -3,7 +3,6 @@ import { ScaffolderEntitiesProcessor } from '@backstage/plugin-catalog-backend-m
 import { Router } from 'express';
 import { PluginEnvironment } from '../types';
 import { GithubEntityProvider } from '@backstage/plugin-catalog-backend-module-github';
-import { TechMaturityCatalogProcessor } from '../TechMaturityCatalogProcessor';
 import {
   GithubDiscoveryProcessor,
   GithubOrgReaderProcessor,
@@ -12,6 +11,7 @@ import {
   ScmIntegrations,
   DefaultGithubCredentialsProvider,
 } from '@backstage/integration';
+import { TechMaturityCatalogProcessor2 } from '../TechMaturityCatalogProcessor2';
 
 export default async function createPlugin(
   env: PluginEnvironment,
@@ -31,7 +31,8 @@ export default async function createPlugin(
     }),
   );
   builder.addProcessor(new ScaffolderEntitiesProcessor());
-  builder.addProcessor(new TechMaturityCatalogProcessor(env.logger));
+  // builder.addProcessor(new TechMaturityCatalogProcessor(env.logger));
+  builder.addProcessor(new TechMaturityCatalogProcessor2(env.logger));
 
   const integrations = ScmIntegrations.fromConfig(env.config);
   const githubCredentialsProvider =
