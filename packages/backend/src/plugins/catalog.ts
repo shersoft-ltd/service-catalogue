@@ -12,6 +12,7 @@ import {
   DefaultGithubCredentialsProvider,
 } from '@backstage/integration';
 import { TechMaturityCatalogProcessor2 } from '../TechMaturityCatalogProcessor2';
+import { TechMaturityEntityProvider } from '../TechMaturityEntityProvider';
 
 export default async function createPlugin(
   env: PluginEnvironment,
@@ -28,6 +29,16 @@ export default async function createPlugin(
       }),
       // optional: alternatively, use schedule
       scheduler: env.scheduler,
+    }),
+  );
+  builder.addEntityProvider(
+    TechMaturityEntityProvider.fromConfig(env.config, {
+      logger: env.logger,
+      schedule: env.scheduler.createScheduledTaskRunner({
+        frequency: { minutes: 30 },
+        timeout: { minutes: 3 },
+        initialDelay: { minutes: 0 },
+      }),
     }),
   );
   builder.addProcessor(new ScaffolderEntitiesProcessor());
