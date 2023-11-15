@@ -98,6 +98,13 @@ catalog:
         filters:
           branch: 'main' # string
           repository: '.*' # Regex
+    techMaturity:
+      sourceRoleArn: "arn:aws:iam::123123123123:role/service-catalogue-orchestrator"
+      destinationRoleName: service-catalogue
+      regions:
+        - eu-west-1
+        - us-east-1
+
   locations:
     # Local example data, file locations are relative to the backend process, typically `packages/backend`
     - type: file
@@ -114,9 +121,6 @@ catalog:
       target: ../../examples/org.yaml
       rules:
         - allow: [User, Group]
-
-    - type: cdk-cloudformation-stack
-      target: arn:aws:iam::169549429764:role/test-backstage@friend-crm-auth-prod@eu-west-1
 
     ## Uncomment these lines to add more example data
     # - type: url

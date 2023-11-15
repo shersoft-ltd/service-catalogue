@@ -252,6 +252,7 @@ export class TechMaturityEntityProvider implements EntityProvider {
         } catch (err) {
           this.logger.warn('failed to detect resources in AWS account', {
             account,
+            err,
           });
         }
       },
