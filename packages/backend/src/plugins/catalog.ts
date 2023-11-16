@@ -11,7 +11,7 @@ import {
   ScmIntegrations,
   DefaultGithubCredentialsProvider,
 } from '@backstage/integration';
-import { TechMaturityCatalogProcessor2 } from '../TechMaturityCatalogProcessor2';
+import { TechMaturityCatalogProcessor } from '../TechMaturityCatalogProcessor';
 import { TechMaturityEntityProvider } from '../TechMaturityEntityProvider';
 
 export default async function createPlugin(
@@ -42,8 +42,7 @@ export default async function createPlugin(
     }),
   );
   builder.addProcessor(new ScaffolderEntitiesProcessor());
-  // builder.addProcessor(new TechMaturityCatalogProcessor(env.logger));
-  builder.addProcessor(new TechMaturityCatalogProcessor2(env.logger));
+  builder.addProcessor(new TechMaturityCatalogProcessor(env.logger));
 
   const integrations = ScmIntegrations.fromConfig(env.config);
   const githubCredentialsProvider =

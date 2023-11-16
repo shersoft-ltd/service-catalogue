@@ -1,201 +1,220 @@
 import { CatalogProcessor } from '@backstage/plugin-catalog-node';
-import { Entity, isResourceEntity } from '@backstage/catalog-model';
 import { LocationSpec } from '@backstage/plugin-catalog-common';
 import {
   CatalogProcessorCache,
   CatalogProcessorEmit,
+  CatalogProcessorParser,
+  processingResult,
 } from '@backstage/plugin-catalog-node';
 import {
   CloudFormationClient,
+  DescribeStacksCommand,
   GetTemplateCommand,
   paginateListStackResources,
-  ResourceStatus,
 } from '@aws-sdk/client-cloudformation';
 import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
 import { Logger } from 'winston';
 import * as yaml from 'yaml';
+import * as crypto from 'crypto';
+import { TechMaturityEntityProvider } from './TechMaturityEntityProvider';
 
 export class TechMaturityCatalogProcessor implements CatalogProcessor {
-  private static ResourceType = 'cdk-cloudformation-stack';
+  private static AnnotationPrefix = 'shersoft.cloud/';
 
-  private static ValidResourceStatuses: ResourceStatus[] = [
-    ResourceStatus.CREATE_COMPLETE,
-    ResourceStatus.IMPORT_COMPLETE,
-    ResourceStatus.UPDATE_COMPLETE,
-  ];
+  // private static ValidResourceStatuses: ResourceStatus[] = [
+  //   ResourceStatus.CREATE_COMPLETE,
+  //   ResourceStatus.IMPORT_COMPLETE,
+  //   ResourceStatus.UPDATE_COMPLETE,
+  // ];
 
   constructor(private readonly logger: Logger) {}
 
   getProcessorName() {
-    return 'TechMaturityCatalogProcessor';
+    return 'TechMaturityCatalogProcessor2';
   }
 
   // readLocation(location: LocationSpec$1, optional: boolean, emit: CatalogProcessorEmit, parser: CatalogProcessorParser, cache: CatalogProcessorCache)
 
-  async postProcessEntity(
-    entity: Entity,
+  async readLocation(
     location: LocationSpec,
+    _optional: boolean,
     emit: CatalogProcessorEmit,
+    _parser: CatalogProcessorParser,
     _cache: CatalogProcessorCache,
-  ): Promise<Entity> {
+  ) {
     if (
-      isResourceEntity(entity) &&
-      entity.spec.type === TechMaturityCatalogProcessor.ResourceType
+      location.type !==
+      TechMaturityEntityProvider.CloudFormationStackLocationType
     ) {
-      if (
-        typeof entity.metadata['roleArn'] !== 'string' ||
-        typeof entity.metadata['stackName'] !== 'string' ||
-        typeof entity.metadata['region'] !== 'string'
-      ) {
-        throw new Error(
-          `You must set a 'roleArn', 'stackName' and 'region' in the metadata of resource ${entity.metadata.namespace}/${entity.metadata.name}`,
-        );
-      }
-
-      const roleArn = entity.metadata['roleArn'];
-      const stackName = entity.metadata['stackName'];
-      const region = entity.metadata['region'];
-      const accountId = roleArn.split(':')[4];
-
-      const cloudFormationClient = new CloudFormationClient({
-        credentials: fromTemporaryCredentials({
-          params: {
-            RoleArn: roleArn,
-          },
-        }),
-      });
-
-      const template = await cloudFormationClient.send(
-        new GetTemplateCommand({
-          StackName: stackName,
-        }),
-      );
-
-      if (!template.TemplateBody) {
-        throw new Error(
-          `CloudFormation stack ${stackName} (account = ${accountId}, region = ${region}) missing template body.`,
-        );
-      }
-
-      const parsedTemplate = yaml.parse(template.TemplateBody);
-
-      if (!entity.spec.dependsOn) {
-        entity.spec.dependsOn = [];
-      }
-      //
-      // entity.spec.dependsOn.push(
-      //   `aws-cloudformation-template-${accountId}-${region}-${stackName}`,
-      // );
-
-      // emit({
-      //   type: 'entity',
-      //   entity: {
-      //     apiVersion: 'backstage.io/v1alpha1',
-      //     kind: 'Resource',
-      //     metadata: {
-      //       name: `aws-cloudformation-template-${accountId}-${region}-${stackName}`,
-      //       description: `Auto-detected AWS CloudFormation Stack.`,
-      //       'aws-account-id': accountId,
-      //       'aws-region': region,
-      //       'stack-name': stackName,
-      //     },
-      //     spec: {
-      //       type: 'aws-cloudformation-template',
-      //       lifecycle: 'unknown',
-      //       owner: 'aws',
-      //       dependsOn: [`resource:${entity.metadata.name}`],
-      //     },
-      //   },
-      //   location,
-      // });
-
-      // TODO: maybe check stack state?
-
-      for await (const resources of paginateListStackResources(
-        { client: cloudFormationClient },
-        {
-          StackName: stackName,
-        },
-      )) {
-        resources.StackResourceSummaries?.filter(resource => {
-          const ctx = {
-            resourceStatus: resource.ResourceStatus,
-            resourceType: resource.ResourceType,
-            logicalResourceId: resource.LogicalResourceId,
-          };
-
-          if (
-            TechMaturityCatalogProcessor.ValidResourceStatuses.includes(
-              resource.ResourceStatus as ResourceStatus,
-            )
-          ) {
-            this.logger.debug('resource is in valid status', ctx);
-
-            return true;
-          } else {
-            this.logger.debug('resource is not in valid status', ctx);
-
-            return false;
-          }
-        }).forEach(resource => {
-          if (resource.ResourceType === 'AWS::Lambda::Function') {
-            const resourceDetail =
-              parsedTemplate.Resources[resource.LogicalResourceId!];
-
-            emit({
-              type: 'entity',
-              entity: {
-                apiVersion: 'backstage.io/v1alpha1',
-                kind: 'Resource',
-                metadata: {
-                  name:
-                    'aws-lambda-runtime-' + resourceDetail.Properties.Runtime,
-                  description: `Auto-detected AWS Lambda runtime: ${resourceDetail.Properties.Runtime}`,
-                },
-                spec: {
-                  type: 'aws-lambda-runtime',
-                  lifecycle: 'production',
-                  owner: 'aws',
-                },
-              },
-              location,
-            });
-
-            const lambdaResourceName = (
-              'aws-lmb-' +
-              resource
-                .PhysicalResourceId!.replaceAll(':', '')
-                .replaceAll('/', '-')
-            ).substring(0, 63);
-
-            emit({
-              type: 'entity',
-              entity: {
-                apiVersion: 'backstage.io/v1alpha1',
-                kind: 'Resource',
-                metadata: {
-                  name: lambdaResourceName,
-                  description: `Auto-detected AWS Lambda function: ${resource.PhysicalResourceId}`,
-                },
-                spec: {
-                  type: 'aws-lambda-function',
-                  lifecycle: 'unknown',
-                  owner: 'aws',
-                  dependsOn: [
-                    `resource:aws-lambda-runtime-${resourceDetail.Properties.Runtime}`,
-                  ],
-                  dependencyOf: [`resource:${entity.metadata.name}`],
-                },
-              },
-              location,
-            });
-
-            entity.spec.dependsOn?.push(`resource:${lambdaResourceName}`);
-          }
-        });
-      }
+      return false;
     }
 
-    return entity;
+    const { accountId, roleArn, stackName, region } = JSON.parse(
+      location.target,
+    );
+
+    const logger = this.logger.child({
+      roleArn,
+      stackName,
+      accountId,
+      region,
+    });
+
+    logger.info('reading location', {
+      location,
+    });
+
+    const cloudFormationClient = new CloudFormationClient({
+      credentials: fromTemporaryCredentials({
+        params: {
+          RoleArn: roleArn,
+        },
+      }),
+    });
+
+    const stack = await cloudFormationClient.send(
+      new DescribeStacksCommand({ StackName: stackName }),
+    );
+
+    if (!stack.Stacks?.[0]?.StackStatus?.includes('COMPLETE')) {
+      logger.info("not reading stack as it's not in a supported state", {
+        status: stack.Stacks?.[0]?.StackStatus,
+      });
+
+      return true;
+    }
+
+    const template = await cloudFormationClient.send(
+      new GetTemplateCommand({
+        StackName: stackName,
+      }),
+    );
+
+    if (!template.TemplateBody) {
+      throw new Error(
+        `CloudFormation stack ${stackName} (account = ${accountId}, region = ${region}) missing template body.`,
+      );
+    }
+
+    const stackResourceName =
+      'aws-cfn-' +
+      crypto
+        .createHash('shake256', { outputLength: 27 })
+        .update(Buffer.from(stack.Stacks![0]!.StackId!, 'utf-8'))
+        .digest()
+        .toString('hex');
+
+    const tags = (stack.Stacks[0].Tags || []).reduce((out, curr) => {
+      out[curr.Key!] = curr.Value!;
+      return out;
+    }, {} as Record<string, string>);
+
+    emit(
+      processingResult.entity(location, {
+        apiVersion: 'backstage.io/v1alpha1',
+        kind: 'Resource',
+        metadata: {
+          name: stackResourceName,
+          description: `Auto-detected AWS CloudFormation Stack: ${stackName}`,
+          annotations: {
+            [`${TechMaturityCatalogProcessor.AnnotationPrefix}region`]: region,
+            [`${TechMaturityCatalogProcessor.AnnotationPrefix}lookedUpWith`]:
+              roleArn,
+            [`${TechMaturityCatalogProcessor.AnnotationPrefix}accountId`]:
+              accountId,
+            [`${TechMaturityCatalogProcessor.AnnotationPrefix}cloudFormationStackName`]:
+              stackName,
+          },
+          links: [
+            {
+              url: `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/stackinfo?filteringText=&filteringStatus=active&viewNested=true&stackId=${encodeURIComponent(
+                stack.Stacks![0].StackId!,
+              )}`,
+              title: 'CloudFormation stack in the AWS console',
+            },
+          ],
+        },
+        spec: {
+          type: 'aws-cloudformation-stack',
+          lifecycle: tags['shersoft-ltd:backstage:lifecycle'] || 'production',
+          owner: tags['shersoft-ltd:backstage:owner'] || 'platform',
+          dependencyOf: tags['shersoft-ltd:backstage:project']
+            ? tags['shersoft-ltd:backstage:project']
+            : [],
+        },
+      }),
+    );
+
+    const parsedTemplate = yaml.parse(template.TemplateBody);
+
+    for await (const resources of paginateListStackResources(
+      { client: cloudFormationClient },
+      {
+        StackName: stackName,
+      },
+    )) {
+      resources.StackResourceSummaries?.forEach(resource => {
+        if (resource.ResourceType === 'AWS::Lambda::Function') {
+          const resourceDetail =
+            parsedTemplate.Resources[resource.LogicalResourceId!];
+
+          const lambdaResourceName =
+            'aws-lmb-' +
+            crypto
+              .createHash('shake256', { outputLength: 27 })
+              .update(
+                Buffer.from(
+                  stack.Stacks![0]!.StackId! + resource.LogicalResourceId!,
+                  'utf-8',
+                ),
+              )
+              .digest()
+              .toString('hex');
+
+          emit(
+            processingResult.entity(location, {
+              apiVersion: 'backstage.io/v1alpha1',
+              kind: 'Resource',
+              metadata: {
+                name: lambdaResourceName,
+                description: `Auto-detected AWS Lambda function: ${resource.PhysicalResourceId}`,
+                annotations: {
+                  [`${TechMaturityCatalogProcessor.AnnotationPrefix}region`]:
+                    region,
+                  [`${TechMaturityCatalogProcessor.AnnotationPrefix}lookedUpWith`]:
+                    roleArn,
+                  [`${TechMaturityCatalogProcessor.AnnotationPrefix}accountId`]:
+                    accountId,
+                  [`${TechMaturityCatalogProcessor.AnnotationPrefix}functionName`]:
+                    resource.PhysicalResourceId!,
+                  [`${TechMaturityCatalogProcessor.AnnotationPrefix}cloudFormationStackName`]:
+                    stackName,
+                  [`${TechMaturityCatalogProcessor.AnnotationPrefix}cloudFormationLogicalId`]:
+                    resource.LogicalResourceId!,
+                },
+                links: [
+                  {
+                    url: `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/stackinfo?filteringText=&filteringStatus=active&viewNested=true&stackId=${encodeURIComponent(
+                      stack.Stacks![0].StackId!,
+                    )}`,
+                    title: 'CloudFormation stack in the AWS console',
+                  },
+                ],
+              },
+              spec: {
+                type: 'aws-lambda-function',
+                lifecycle: 'unknown',
+                owner: 'aws',
+                dependsOn: [
+                  `resource:aws-lambda-runtime-${resourceDetail.Properties.Runtime}`,
+                ],
+              },
+            }),
+          );
+        }
+      });
+    }
+
+    return true;
   }
 }

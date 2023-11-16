@@ -231,11 +231,12 @@ export class TechMaturityEntityProvider implements EntityProvider {
                   entity: locationSpecToLocationEntity({
                     location: {
                       type: TechMaturityEntityProvider.CloudFormationStackLocationType,
-                      target: `https://shersoft.cloud?accountId=${
-                        account.Id
-                      }&roleArn=${encodeURIComponent(
-                        roleArn,
-                      )}&stackName=${encodeURIComponent(stack.StackName!)}`,
+                      target: JSON.stringify({
+                        accountId: account.Id,
+                        roleArn: roleArn,
+                        stackName: encodeURIComponent(stack.StackName!),
+                        region,
+                      }),
                     },
                   }),
                 });
