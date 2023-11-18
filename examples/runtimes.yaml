@@ -19,88 +19,88 @@ apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-go1.x
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-nodejs12.x
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-nodejs14.x
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-nodejs16.x
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-nodejs18.x
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-nodejs20.x
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-python2.7
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-python3.10
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: aws-lambda-runtime-python3.11
-  description: "AWS Lambda runtime."
 spec:
   type: aws-lambda-runtime
   lifecycle: production
   owner: platform
+  description: "AWS Lambda runtime."

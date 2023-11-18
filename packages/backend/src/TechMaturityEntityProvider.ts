@@ -66,11 +66,6 @@ export class TechMaturityEntityProvider implements EntityProvider {
     options: {
       logger: Logger;
       schedule: TaskRunner;
-      overrideOrganizationsClientFactory?: () => OrganizationsClient;
-      overrideCloudFormationClientFactory?: (accountId: string) => {
-        cloudFormationClient: CloudFormationClient;
-        roleArn: string;
-      };
     },
   ): TechMaturityEntityProvider {
     const sourceRoleArn = config.getString(
@@ -83,40 +78,20 @@ export class TechMaturityEntityProvider implements EntityProvider {
       'catalog.providers.techMaturity.regions',
     );
 
-    const topLevelCredentials = options.overrideOrganizationsClientFactory
-      ? void 0
-      : fromTemporaryCredentials({
-          params: {
-            RoleArn: sourceRoleArn,
-          },
-        });
+    const topLevelCredentials = fromTemporaryCredentials({
+      params: {
+        RoleArn: sourceRoleArn,
+      },
+    });
 
     return new TechMaturityEntityProvider(
       options.logger,
       options.schedule,
       regions,
-      options.overrideOrganizationsClientFactory ||
-        (() =>
-          new OrganizationsClient({
-            credentials: topLevelCredentials,
-          })),
-      options.overrideCloudFormationClientFactory ||
-        ((accountId: string, region: string) => {
-          const roleArn = `arn:aws:iam::${accountId}:role/${destinationRoleName}`;
-
-          return {
-            cloudFormationClient: new CloudFormationClient({
-              credentials: fromTemporaryCredentials({
-                masterCredentials: topLevelCredentials,
-                params: {
-                  RoleArn: `arn:aws:iam::${accountId}:role/${destinationRoleName}`,
-                },
-              }),
-              region,
-            }),
-            roleArn,
-          };
-        }),
+      new OrganizationsClient({
+        credentials: topLevelCredentials,
+      }),
+      destinationRoleName,
     );
   }
 
@@ -128,28 +103,18 @@ export class TechMaturityEntityProvider implements EntityProvider {
 
   private scheduleFn: () => Promise<void>;
 
-  private organizationsClient: OrganizationsClient;
-
   constructor(
     logger: Logger,
     taskRunner: TaskRunner,
     private readonly regions: string[],
-    organizationsClientFactory: () => OrganizationsClient,
-    private readonly cloudFormationClientFactory: (
-      accountId: string,
-      region: string,
-    ) => {
-      cloudFormationClient: CloudFormationClient;
-      roleArn: string;
-    },
+    private readonly organizationsClient: OrganizationsClient,
+    private readonly destinationRoleName: string,
   ) {
     this.logger = logger.child({
       target: this.getProviderName(),
     });
 
     this.scheduleFn = this.createScheduleFn(taskRunner);
-
-    this.organizationsClient = organizationsClientFactory();
   }
 
   getProviderName(): string {
@@ -207,8 +172,17 @@ export class TechMaturityEntityProvider implements EntityProvider {
       async account => {
         try {
           for (const region of this.regions) {
-            const { cloudFormationClient, roleArn } =
-              this.cloudFormationClientFactory(account.Id!, region);
+            const roleArn = `arn:aws:iam::${account.Id}:role/${this.destinationRoleName}`;
+
+            const cloudFormationClient = new CloudFormationClient({
+              credentials: fromTemporaryCredentials({
+                masterCredentials: this.organizationsClient.config.credentials,
+                params: {
+                  RoleArn: roleArn,
+                },
+              }),
+              region,
+            });
 
             const describeStacks = paginateDescribeStacks(
               { client: cloudFormationClient },
@@ -260,6 +234,7 @@ export class TechMaturityEntityProvider implements EntityProvider {
       { concurrency: 3 },
     );
 
+    console.log('this.connection', this.connection);
     await this.connection?.applyMutation({
       type: 'full',
       entities: stacks,

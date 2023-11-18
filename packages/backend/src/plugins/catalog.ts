@@ -42,7 +42,9 @@ export default async function createPlugin(
     }),
   );
   builder.addProcessor(new ScaffolderEntitiesProcessor());
-  builder.addProcessor(new TechMaturityCatalogProcessor(env.logger));
+  builder.addProcessor(
+    TechMaturityCatalogProcessor.fromConfig(env.logger, env.config),
+  );
 
   const integrations = ScmIntegrations.fromConfig(env.config);
   const githubCredentialsProvider =
